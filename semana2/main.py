@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from typing import List, Dict
 from pydantic import BaseModel
 from typing import Optional
+from Proyecto.app.models.users import UserInDB, UserBase, UserUpdate,ProductListResponse,Product,ProductResponse
+
 
 app = FastAPI(title="Mi Primera API")
 
@@ -15,29 +17,6 @@ def info():
 def greet_user(name: str) -> dict:
     return {"greeting": f"¡Hola {name}!"}
 
-@app.get("/calculate/{num1}/{num2}")
-def calculate(num1: int, num2: int) -> dict:
-    result = num1 + num2
-    return {"result": result, "operation": "sum"}
-
-@app.get("/fruits")
-def get_fruits() -> List[str]:
-    return ["apple", "banana", "orange"]
-
-# Lista de números
-@app.get("/numbers")
-def get_numbers() -> List[int]:
-    return [1, 2, 3, 4, 5]
-
-# Diccionario con estructura conocida
-@app.get("/user/{user_id}")
-def get_user(user_id: int) -> Dict[str, str]:
-    return {
-        "id": str(user_id),
-        "name": "Demo User",
-        "email": "demo@example.com"
-    }
-
 @app.get("/my-profile")
 def my_profile():
     return {
@@ -48,11 +27,6 @@ def my_profile():
         "likes_fastapi": True              # ¿Te gustó FastAPI?
     }
 
-class Product(BaseModel):
-    name: str
-    price: int  # en centavos para evitar decimales
-    available: bool = True  # valor por defecto
-
 products = []
 
 # Endpoint GET (como antes)
@@ -61,17 +35,27 @@ def hello_world() -> dict:
     return {"message": "API with Pydantic!"}
 
 # NUEVO: Endpoint POST con Pydantic
-@app.post("/products")
-def create_product(product: Product) -> dict:
+@app.post("/products", response_model=ProductResponse)
+def create_product(product: Product) -> ProductResponse:
     product_dict = product.dict()
     product_dict["id"] = len(products) + 1
     products.append(product_dict)
-    return {"message": "Product created", "product": product_dict}
+    return ProductResponse(
+        id=product_dict["id"],
+        name=product_dict["name"],
+        price=product_dict["price"],
+        available=product_dict["available"],
+        message="Product created successfully"
+
+    )
 
 # Endpoint para ver todos los productos
-@app.get("/products")
-def get_products() -> dict:
-    return {"products": products, "total": len(products)}
+@app.get("/products", response_model=ProductListResponse)
+def get_products() -> ProductListResponse:
+    return ProductListResponse(
+        products=products,
+        total=len(products)
+    )
 
 @app.get("/products/{product_id}")
 def get_product(product_id: int) -> dict:

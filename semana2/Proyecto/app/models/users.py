@@ -24,3 +24,20 @@ class UserInDB(UserBase):
 class UserUpdate(BaseModel):
     full_name: Optional[str] = None
     preferences: Optional[Dict[str, Any]] = None
+
+class Product(BaseModel):
+    name: str
+    price: int  
+    available: bool = True 
+
+class ProductResponse(BaseModel):
+    id: int
+    name: str
+    price: int
+    available: bool
+    message: str = "Product retrieved successfully"
+
+class ProductListResponse(BaseModel):
+    products: list
+    total: int
+    message: str = "List retrieved successfully"    
