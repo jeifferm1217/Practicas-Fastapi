@@ -140,3 +140,78 @@ async def create_new_product(product: ProductCreate):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error al crear producto: {str(e)}"
         )
+
+@app.put(
+    "/products/{product_id}",
+    response_model=ProductResponse,
+    summary="Actualizar producto completo",
+    description="Actualiza completamente un producto existente"
+)
+async def update_existing_product(
+    product: ProductUpdate,
+    product_id: int = Path(..., gt=0, description="ID del producto a actualizar")
+):
+    try:
+        # Verificar que el producto existe
+        existing_product = get_product_by_id(product_id)
+        if not existing_product:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Producto con ID {product_id} no encontrado"
+            )
+
+        # Validar que no hay conflicto de nombres (excepto consigo mismo)
+        all_products = get_all_products()
+        for existing in all_products:
+            if (existing["id"] != product_id and
+                existing["name"].lower() == product.name.lower()):
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Ya existe otro producto con el nombre '{product.name}'"
+                )
+
+        # Actualizar producto
+        product_data = product.dict()
+        updated_product = update_product(product_id, product_data)
+
+        return ProductResponse(**updated_product)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error al actualizar producto: {str(e)}"
+        )
+    
+@app.delete(
+    "/products/{product_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="Eliminar producto",
+    description="Elimina un producto del inventario",
+    responses={
+        204: {"description": "Producto eliminado exitosamente"},
+        404: {"description": "Producto no encontrado"}
+    }
+)
+async def delete_existing_product(
+    product_id: int = Path(..., gt=0, description="ID del producto a eliminar")
+):
+    # Verificar que el producto existe
+    existing_product = get_product_by_id(product_id)
+    if not existing_product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Producto con ID {product_id} no encontrado"
+        )
+
+    # Eliminar producto
+    deleted = delete_product(product_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error al eliminar el producto"
+        )
+
+    # Return 204 No Content (sin body)
+    return None    

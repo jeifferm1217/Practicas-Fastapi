@@ -3,6 +3,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from dotenv import load_dotenv
+from . import models
+
 
 # Cargar variables de entorno
 load_dotenv()
@@ -29,3 +31,12 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# En database.py - Para debugging SQL
+import logging
+
+logging.basicConfig()
+logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
+
+# Engine con echo para ver SQL queries
+engine = create_engine(DATABASE_URL, echo=True)
